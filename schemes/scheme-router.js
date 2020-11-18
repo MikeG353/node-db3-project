@@ -4,58 +4,53 @@ const Schemes = require('./scheme-model.js');
 
 const router = express.Router();
 
-router.get('/', (req, res) => {
-  Schemes.find()
-    .then(schemes => {
-      res.json(schemes);
-    })
-    .catch(err => {
-      res.status(500).json({ message: 'Failed to get schemes' });
-    });
+router.get('/', async (req, res) => {
+  try {
+    const schemes = await Schemes.find();
+    res.json(schemes);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: 'error with db', error: err });
+  }
 });
 
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   const { id } = req.params;
 
-  Schemes.findById(id)
-    .then(scheme => {
-      if (scheme) {
-        res.json(scheme);
-      } else {
-        res.status(404).json({ message: 'Could not find scheme with given id.' })
-      }
-    })
-    .catch(err => {
-      res.status(500).json({ message: 'Failed to get schemes' });
-    });
+  try {
+    const scheme = await Schemes.findById(id);
+    if (scheme) {
+      res.json(scheme);
+    } else {
+      res.status(404).json({ message: 'invalid id' });
+    }
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: 'error with db', error: err });
+  }
 });
 
-router.get('/:id/steps', (req, res) => {
+router.get('/:id/steps', async (req, res) => {
   const { id } = req.params;
 
-  Schemes.findSteps(id)
-    .then(steps => {
-      if (steps.length) {
-        res.json(steps);
-      } else {
-        res.status(404).json({ message: 'Could not find steps for given scheme' })
-      }
-    })
-    .catch(err => {
-      res.status(500).json({ message: 'Failed to get steps' });
-    });
+  try {
+    const steps = await Schemes.findSteps(id);
+    res.json(steps);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: 'error with db', error: err });
+  }
 });
 
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const schemeData = req.body;
-
-  Schemes.add(schemeData)
-    .then(scheme => {
-      res.status(201).json(scheme);
-    })
-    .catch(err => {
-      res.status(500).json({ message: 'Failed to create new scheme' });
-    });
+  try {
+    const newScheme = await Schemes.add(schemeData);
+    res.json(newScheme);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: 'error with db', error: err });
+  }
 });
 
 router.post('/:id/steps', (req, res) => {
@@ -78,40 +73,36 @@ router.post('/:id/steps', (req, res) => {
     });
 });
 
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
   const { id } = req.params;
   const changes = req.body;
 
-  Schemes.findById(id)
-    .then(scheme => {
-      if (scheme) {
-        return Schemes.update(changes, id);
-      } else {
-        res.status(404).json({ message: 'Could not find scheme with given id' });
-      }
-    })
-    .then(updatedScheme => {
-      res.json(updatedScheme);
-    })
-    .catch(err => {
-      res.status(500).json({ message: 'Failed to update scheme' });
-    });
+  try {
+    const changedScheme = await Schemes.update(id, changes);
+    if (changedScheme) {
+      res.json(changedScheme);
+    } else {
+      res.status(404).json({ message: 'invalid id' });
+    }
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: 'Failed to create new step' });
+  }
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   const { id } = req.params;
-
-  Schemes.remove(id)
-    .then(deleted => {
-      if (deleted) {
-        res.json({ removed: deleted });
-      } else {
-        res.status(404).json({ message: 'Could not find scheme with given id' });
-      }
-    })
-    .catch(err => {
-      res.status(500).json({ message: 'Failed to delete scheme' });
-    });
+  try {
+    const count = await Schemes.remove(id);
+    if (count) {
+      res.json({ message: `deleted ${count} records` });
+    } else {
+      res.status(404).json({ message: 'invalid id' });
+    }
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: 'error with db', error: err });
+  }
 });
 
 module.exports = router;
